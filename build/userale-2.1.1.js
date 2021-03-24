@@ -905,12 +905,12 @@
    * @param  {Object} config Configuration object to use when logging.
    */
   function initSender(logs, config) {
-    if (sendIntervalId !== null) {
-      clearInterval(sendIntervalId);
-    }
+      if (sendIntervalId !== null) {
+          clearInterval(sendIntervalId);
+      }
 
-    sendIntervalId = sendOnInterval(logs, config);
-    sendOnClose(logs, config);
+      sendIntervalId = sendOnInterval(logs, config);
+      sendOnClose(logs, config);
   }
 
   /**
@@ -921,16 +921,16 @@
    * @return {Number}        The newly created interval id.
    */
   function sendOnInterval(logs, config) {
-    return setInterval(function() {
-      if (!config.on) {
-        return;
-      }
+      return setInterval(function () {
+          if (!config.on) {
+              return;
+          }
 
-      if (logs.length >= config.logCountThreshold) {
-        sendLogs(logs.slice(0), config, 0); // Send a copy
-        logs.splice(0); // Clear array reference (no reassignment)
-      }
-    }, config.transmitInterval);
+          if (logs.length >= config.logCountThreshold) {
+              sendLogs(logs.slice(0), config, 0); // Send a copy
+              logs.splice(0); // Clear array reference (no reassignment)
+          }
+      }, config.transmitInterval);
   }
 
   /**
@@ -939,27 +939,31 @@
    * @param  {Object} config Configuration object to be read from.
    */
   function sendOnClose(logs, config) {
-  /** if (!config.on) {
-      return;
-   } */
-  document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden' && logs.length > 0) {
-        navigator.sendBeacon(config.url, JSON.stringify(logs));
-        logs.splice(0); // Clear array reference (no reassignment)
+      console.log('config.on =', config.on);
+      // if (!config.on) {
+      //     return;
+      // }
+      document.addEventListener('visibilitychange', function () {
+          console.log('visibility changed!');
+          if (document.visibilityState === 'hidden' && logs.length > 0) {
+              console.log('navigator sendBeacon');
+              navigator.sendBeacon(config.url, JSON.stringify(logs));
+              logs.splice(0); // Clear array reference (no reassignment)
+              console.log('logs len', logs.length);
+          }
+      });
+      /**
+       if (navigator.sendBeacon) {
+        window.addEventListener('unload', function() {
+          ;
+      } else {
+        window.addEventListener('beforeunload', function() {
+          if (logs.length > 0) {
+            sendLogs(logs, config, 1);
+          }
+        })
       }
-    });
-  /**
-      if (navigator.sendBeacon) {
-      window.addEventListener('unload', function() {
-        ;
-    } else {
-      window.addEventListener('beforeunload', function() {
-        if (logs.length > 0) {
-          sendLogs(logs, config, 1);
-        }
-      })
-    }
-  */
+       */
   }
 
   /**
@@ -972,27 +976,27 @@
 
   // @todo expose config object to sendLogs replate url with config.url
   function sendLogs(logs, config, retries) {
-    var req = new XMLHttpRequest();
+      var req = new XMLHttpRequest();
 
-    // @todo setRequestHeader for Auth
-    var data = JSON.stringify(logs);
+      // @todo setRequestHeader for Auth
+      var data = JSON.stringify(logs);
 
-    req.open('POST', config.url);
-    if (config.authHeader) {
-      req.setRequestHeader('Authorization', config.authHeader);
-    }
-
-    req.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
-
-    req.onreadystatechange = function() {
-      if (req.readyState === 4 && req.status !== 200) {
-        if (retries > 0) {
-          sendLogs(logs, config, retries--);
-        }
+      req.open('POST', config.url);
+      if (config.authHeader) {
+          req.setRequestHeader('Authorization', config.authHeader);
       }
-    };
 
-    req.send(data);
+      req.setRequestHeader('Content-type', 'application/json;charset=UTF-8');
+
+      req.onreadystatechange = function () {
+          if (req.readyState === 4 && req.status !== 200) {
+              if (retries > 0) {
+                  sendLogs(logs, config, retries--);
+              }
+          }
+      };
+
+      req.send(data);
   }
 
   /*
