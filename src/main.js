@@ -65,8 +65,8 @@ function setup(config) {
 
             if (state === 'interactive' || state === 'complete') {
                 attachHandlers(config);
-                initSender(logs, config);
                 started = config.on = true;
+                initSender(logs, config);
                 packageCustomLog({
                     type: 'load',
                     logType: 'raw',

@@ -7,7 +7,7 @@
  * the License.  You may obtain a copy of the License at
  * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +17,8 @@
 import {expect} from 'chai';
 import {JSDOM} from 'jsdom';
 import sinon from 'sinon';
+import 'jsdom-worker'
+import 'global-jsdom/register'
 import {sendOnInterval, sendOnClose} from '../src/sendLogs';
 
 describe('sendLogs', () => {
@@ -88,61 +90,6 @@ describe('sendLogs', () => {
         global.XMLHttpRequest = originalXMLHttpRequest;
         done();
     });
-
-    it('sends logs on page exit with navigator', () => {
-        const html = `<html><head></head><body></body></html>`;
-        const dom = new JSDOM(html)
-        const originalNavigator = global.navigator;
-        const originalWindow = global.window;
-        let called = false;
-        global.window = dom.window;
-        global.navigator = {
-            sendBeacon: () => {
-                called = true;
-            },
-        };
-
-        const evt = window.document.createEvent('CustomEvent');
-        evt.initEvent('unload', true, true);
-        sendOnClose([{foo: 'bar'}], {on: true, url: 'test'});
-
-        window.dispatchEvent(evt);
-        window.close();
-
-        expect(called).to.equal(true);
-        global.window = originalWindow;
-        global.navigator = originalNavigator;
-    });
-    it('sends logs on page exit without navigator', () => {
-        const html = `<html><head></head><body></body></html>`;
-        const dom = new JSDOM(html)
-        const window = dom.window
-        const originalNavigator = global.navigator;
-        const originalXMLHttpRequest = global.XMLHttpRequest;
-        const originalWindow = global.window;
-        let requests = 0;
-        const xhr = sinon.useFakeXMLHttpRequest();
-        global.XMLHttpRequest = xhr;
-        global.window = window;
-        global.XMLHttpRequest = xhr;
-        global.navigator = {sendBeacon: false,};
-        xhr.onCreate = () => {
-            requests++;
-        };
-
-        const evt = window.document.createEvent('CustomEvent');
-        evt.initEvent('beforeunload', true, true);
-        sendOnClose([{foo: 'bar'}], {on: true, url: 'test'});
-
-        window.dispatchEvent(evt);
-        window.close();
-
-        expect(requests).to.equal(1);
-        global.window = originalWindow;
-        global.navigator = originalNavigator;
-        global.XMLHttpRequest = originalXMLHttpRequest;
-    });
-
     it('does not send logs on page exit if config is off', () => {
         const html = `<html><head></head><body></body></html>`;
         const dom = new JSDOM(html)
@@ -170,5 +117,19 @@ describe('sendLogs', () => {
         global.window = originalWindow;
         global.navigator = originalNavigator;
         global.XMLHttpRequest = originalXMLHttpRequest;
+    });
+
+    it('flushes the log queue on visibility change', () => {
+        const logs = []
+        const config = {on: true, url: 'test'}
+        logs.push({foo: 'bar'})
+        sendOnClose(logs, config)
+        expect(logs.length).to.equal(1)
+
+        Object.defineProperty(global.document, 'visibilityState', {
+            get: () => 'hidden'
+        })
+        global.document.dispatchEvent(new Event('visibilitychange'))
+        expect(logs).to.be.empty
     });
 });

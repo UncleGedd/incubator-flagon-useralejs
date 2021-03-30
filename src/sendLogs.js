@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+import {createWorker, workerSendLog} from "./worker";
+
 let sendIntervalId = null;
 
 /**
@@ -78,18 +80,13 @@ export function sendOnClose(logs, config) {
   if (!config.on) {
     return;
   }
-
-  if (navigator.sendBeacon) {
-    window.addEventListener('unload', function() {
-      navigator.sendBeacon(config.url, JSON.stringify(logs));
-    });
-  } else {
-    window.addEventListener('beforeunload', function() {
-      if (logs.length > 0) {
-        sendLogs(logs, config, 1);
-      }
-    })
-  }
+  const worker = createWorker(workerSendLog)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden' && logs.length > 0) {
+      worker.postMessage({url: config.url, logs});
+      logs.splice(0, logs.length)
+    }
+  });
 }
 
 /**

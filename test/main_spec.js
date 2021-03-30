@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 import {expect} from 'chai';
-import {createEnvFromFile} from './testUtils';
+import {createEnvFromFile, sleep} from './testUtils';
 
 describe('Userale API', () => {
     const htmlFileName = 'main.html'
@@ -59,18 +59,17 @@ describe('Userale API', () => {
 
     it('starts + stops', async () => {
         const dom = await createEnvFromFile(htmlFileName)
-        setTimeout(() => {
-            const {userale} = dom.window;
-            expect(userale.options().on).to.equal(true);
+        await sleep(200)
+        const {userale} = dom.window;
+        expect(userale.options().on).to.equal(true);
 
-            userale.stop();
-            expect(userale.options().on).to.equal(false);
+        userale.stop();
+        expect(userale.options().on).to.equal(false);
 
-            userale.start();
-            expect(userale.options().on).to.equal(true);
+        userale.start();
+        expect(userale.options().on).to.equal(true);
 
-            dom.window.close();
-        }, 200);
+        dom.window.close();
     });
 
     it('sends custom logs', async () => {

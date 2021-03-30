@@ -330,6 +330,26 @@ function extractTimeFields(timeStamp) {
   };
 }
 
+function workerSendLog(e) {
+  var _e$data = e.data,
+      url = _e$data.url,
+      logs = _e$data.logs;
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(logs && logs.length > 0 ? logs : [])
+  });
+}
+function createWorker(fn) {
+  var blob = new Blob(['self.onmessage = ', fn.toString()], {
+    type: 'text/javascript'
+  });
+  var url = URL.createObjectURL(blob);
+  return new Worker(url);
+}
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -393,17 +413,16 @@ function sendOnClose(logs, config) {
     return;
   }
 
-  if (navigator.sendBeacon) {
-    window.addEventListener('unload', function () {
-      navigator.sendBeacon(config.url, JSON.stringify(logs));
-    });
-  } else {
-    window.addEventListener('beforeunload', function () {
-      if (logs.length > 0) {
-        sendLogs(logs, config, 1);
-      }
-    });
-  }
+  var worker = createWorker(workerSendLog);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden' && logs.length > 0) {
+      worker.postMessage({
+        url: config.url,
+        logs: logs
+      });
+      logs.splice(0, logs.length);
+    }
+  });
 }
 /**
  * Sends the provided array of logs to the specified url,

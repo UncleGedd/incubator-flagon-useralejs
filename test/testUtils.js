@@ -32,5 +32,10 @@ export async function createEnvFromFile(fileName, extraConfig = {}) {
         ...extraConfig
     })
     await sleep(100) // wait for external scripts to load
+
+    // mock web worker for JSDOM from file
+    dom.window.URL.createObjectURL = () => {}
+    dom.window.Worker = () => {}
+
     return dom;
 }
