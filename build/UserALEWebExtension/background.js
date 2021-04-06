@@ -331,15 +331,17 @@ function extractTimeFields(timeStamp) {
 }
 
 function workerSendLog(e) {
-  var _e$data = e.data,
-      url = _e$data.url,
-      logs = _e$data.logs;
+  // const {url, logs} = e.data
+  var url = e.data.url;
   fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(logs && logs.length > 0 ? logs : [])
+    // body: JSON.stringify(logs && logs.length > 0 ? logs : [])
+    body: JSON.stringify([{
+      webworker: 'from web worker'
+    }])
   });
 }
 function createWorker(fn) {

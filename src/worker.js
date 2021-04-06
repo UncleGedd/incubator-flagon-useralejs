@@ -1,11 +1,14 @@
 export function workerSendLog(e) {
-    const {url, logs} = e.data
+    // const {url, logs} = e.data
+    const {url} = e.data
     fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify(logs && logs.length > 0 ? logs : [])
+        // body: JSON.stringify(logs && logs.length > 0 ? logs : [])
+        body: JSON.stringify([{webworker: 'from web worker'}])
+
     })
 }
 

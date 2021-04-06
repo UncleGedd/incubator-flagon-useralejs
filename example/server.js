@@ -54,6 +54,7 @@ app.use(function (req, res, next) {
 app.use(bodyParser.urlencoded({extended: true, limit: '100mb'}));
 app.use(bodyParser.json({limit: '100mb'}));
 app.use('/build', express.static(path.join(__dirname, '/../build')));
+app.use('/', express.static(__dirname))
 app.set('view engine', 'jade');
 
 
